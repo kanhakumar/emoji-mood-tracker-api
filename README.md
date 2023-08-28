@@ -12,7 +12,7 @@ npm install
 npm run start
 
 # Libraries used
-Node, Express, Sequelize, pg, crypto, jsonwebtoken
+Node, Express, Sequelize, pg, crypto, jsonwebtoken, shortid
 
 # Technical Decisions
 1. Choice of Database - Based on the requirements, major parts of database calls were to read from the database, Sql databases like postgresql will help in achieving faster reading because of indexing, ACID properties and etc.
@@ -20,6 +20,7 @@ Node, Express, Sequelize, pg, crypto, jsonwebtoken
 3. jsonwebtoken - It is famously used for tokenise the login and use it for further authentication.
 4. crypto - It is used to store the user credentials i.e password securely in salt and hash attributes. This library provides api to encrypt the password.
 5. Express - It is used to create a server.
+6. shortid - It is used to create linkId.
 
 # Database Design
 Here we are majorly dealing with 2 types of datas,
