@@ -1,9 +1,7 @@
 // Import express
-const express = require('express');
-const bodyParser = require('body-parser');
-// // Import Mongoose
-// const mongoose = require('mongoose');
-const cors = require('cors')
+const express = require('express'); //to create server
+const bodyParser = require('body-parser'); // to parse the request
+const cors = require('cors') //to enable cross platform resource sharing
 
 const apiRoutes = require("./routes");
 const { db } = require("./db");
@@ -27,13 +25,12 @@ db.sync()
 
 function startServer() {
     let port = process.env.PORT || 8080;
-    // Send message for default URL
     app.use('/api', apiRoutes);
     app.listen(port, function () {
         console.log("Running Emoji Mood Tracker APP on port " + port);
     });
     app.use(function (err, req, res, next) {
         console.log(err);
-        return res.status(400).send({ success: false, message: err })
+        return res.status(500).send({ success: false, message: err })
     });
 }

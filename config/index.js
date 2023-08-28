@@ -7,5 +7,4 @@ module.exports = {
         dialect: 'postgres',
     },
     jwt_secret: 'mood-tracker'
-    // Add configurations for other environments (e.g., production) as needed
 };

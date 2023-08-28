@@ -4,6 +4,7 @@ const { MoodEntryTable, SharedLinkTable, convertDateToSequelizeDateOnly, UserTab
 const { EmojiEnums } = require("../models/moodEntry");
 const ErrorMessage = require("../utils/errorMessages");
 const frequentlyUsedEmoji = require("../utils/dataProcessor");
+const createFilterQueryForDate = require("../utils/helper");
 
 
 module.exports = {
@@ -34,7 +35,7 @@ module.exports = {
             if (!date) {
                 return res.status(400).send({ success: false, message: ErrorMessage.DATE_MISSING });
             }
-            const sequelizedDateOnly = convertDateToSequelizeDateOnly(date);
+            const sequelizedDateOnly = convertDateToSequelizeDateOnly(date); //converting data into sequelize form
             const updateMood = {};
             if (emoji) {
                 if (!EmojiEnums.includes(emoji)) {
@@ -63,7 +64,7 @@ module.exports = {
     deleteMood: (req, res, next) => {
         try {
             const userId = req.auth_user.userId;
-            const date = convertDateToSequelizeDateOnly(req.headers.date).val;
+            const date = convertDateToSequelizeDateOnly(req.headers.date).val; //converting data into sequelize form
 
             MoodEntryTable.destroy({ where: { userId, date } })
                 .then(() => {
@@ -86,7 +87,7 @@ module.exports = {
                 where: {
                     userId,
                     date: {
-                        [Op.between]: [startDate, endDate],
+                        [Op.between]: [startDate, endDate], //filter condition
                     },
                 }
             }).then((moodEntries) => {
@@ -102,25 +103,8 @@ module.exports = {
         try {
             const { emoji, startDate, endDate } = req.body;
 
-            if (startDate) {
-                startDate = convertDateToSequelizeDateOnly(startDate).val;
-            }
-            if (endDate) {
-                endDate = convertDateToSequelizeDateOnly(endDate).val;
-            }
-
-            const whereCondition = {
-                emoji,
-                date: {},
-            };
-
-            if (startDate && endDate) {
-                whereCondition.date[Op.between] = [startDate, endDate];
-            } else if (startDate) {
-                whereCondition.date[Op.gte] = startDate;
-            } else if (endDate) {
-                whereCondition.date[Op.lte] = endDate;
-            }
+            const whereCondition = createFilterQueryForDate(startDate, endDate);
+            whereCondition.emoji = emoji;
 
             MoodEntryTable.findAll({
                 where: whereCondition,
@@ -136,25 +120,8 @@ module.exports = {
         try {
             const userId = req.auth_user.userId;
             const { startDate, endDate } = req.body;
-            if (startDate) {
-                startDate = convertDateToSequelizeDateOnly(startDate).val;
-            }
-            if (endDate) {
-                endDate = convertDateToSequelizeDateOnly(endDate).val;
-            }
-
-            const whereCondition = {
-                userId,
-                date: {},
-            };
-
-            if (startDate && endDate) {
-                whereCondition.date[Op.between] = [startDate, endDate];
-            } else if (startDate) {
-                whereCondition.date[Op.gte] = startDate;
-            } else if (endDate) {
-                whereCondition.date[Op.lte] = endDate;
-            }
+            const whereCondition = createFilterQueryForDate(startDate, endDate);
+            whereCondition.userId = userId;
 
             MoodEntryTable.findAll({
                 where: whereCondition,
@@ -205,25 +172,8 @@ module.exports = {
                         return res.status(403).send({ success: false, message: ErrorMessage.USER_FORBIDDEN });
                     }
                     const { startDate, endDate } = sharedLink;
-                    if (startDate) {
-                        startDate = convertDateToSequelizeDateOnly(startDate).val;
-                    }
-                    if (endDate) {
-                        endDate = convertDateToSequelizeDateOnly(endDate).val;
-                    }
-
-                    const whereCondition = {
-                        userId: sharedLink.userId,
-                        date: {},
-                    };
-
-                    if (startDate && endDate) {
-                        whereCondition.date[Op.between] = [startDate, endDate];
-                    } else if (startDate) {
-                        whereCondition.date[Op.gte] = startDate;
-                    } else if (endDate) {
-                        whereCondition.date[Op.lte] = endDate;
-                    }
+                    const whereCondition = createFilterQueryForDate(startDate, endDate, user.id);
+                    whereCondition.userId = user.id;
 
                     MoodEntryTable.findAll({
                         where: whereCondition,

@@ -1,5 +1,6 @@
 const { EmojiEnums } = require("../models/moodEntry");
 
+//helper function to map the mood log data into emoji enums we have to calculate the frequency of that emoji
 const frequentlyUsedEmoji = (moodEntries) => {
     const emojiMap = new Map();
     EmojiEnums.forEach((emoji) => {
@@ -18,6 +19,5 @@ const frequentlyUsedEmoji = (moodEntries) => {
     emojiList.sort((a, b) => b[1].frequency - a[1].frequency);
     return emojiList;
 }
-
 
 module.exports = frequentlyUsedEmoji;

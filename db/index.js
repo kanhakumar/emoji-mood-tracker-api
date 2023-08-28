@@ -13,6 +13,7 @@ const db = new Sequelize(config.development.database, config.development.usernam
     logging: false
 });
 
+//converting the data into sequelize form
 const convertDateToSequelizeDateOnly = (date) => {
     return db.literal(`${date}`);
 }
