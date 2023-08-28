@@ -6,5 +6,7 @@ module.exports = {
     INVALID_PASSWORD: 'Invalid Password',
     USER_FORBIDDEN: 'Permission denied',
     INVALID_EMOJI: 'Invalid Emoji',
-    MOOD_EXISTS: 'Mood Exists'
+    MOOD_EXISTS: 'Mood Exists',
+    MOOD_NOT_FOUND: 'Mood Not Found',
+    LINK_NOT_FOUND: 'Shared link not found'
 }

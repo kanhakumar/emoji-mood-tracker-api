@@ -7,25 +7,28 @@ module.exports = {
         try {
             const { username, password } = req.body;
             const { salt, hash } = setPassword(password);
-            const user = await UserTable.create({ username, salt, hash });
-            const addedUser = user.toJSON();
-            delete addedUser.salt;
-            delete addedUser.hash;
-            return res.status(200).send({ success: true, addedUser });
+            UserTable.create({ username, salt, hash }).then((user) => {
+                const addedUser = user.toJSON();
+                delete addedUser.salt;
+                delete addedUser.hash;
+                return res.status(200).send({ success: true, addedUser });
+            }).catch((err) => {
+                if (err.name === 'SequelizeUniqueConstraintError') {
+                    return res.status(409).send({ success: false, message: ErrorMessage.USER_EXISTS });
+                }
+                return next(e);
+            });
         } catch (e) {
-            if (e.name === 'SequelizeUniqueConstraintError') {
-                return res.status(409).send({ success: false, message: ErrorMessage.USER_EXISTS });
-            }
             return next(e);
         }
     },
     updateSharingOption: (req, res, next) => {
         try {
-            const userId = req.auth_user.userId;
+            const id = req.auth_user.userId;
             const { sharinglink } = req.body;
             UserTable.update(
                 { sharinglink },
-                { returning: true, where: { userId } }
+                { returning: true, where: { id } }
             ).then(([_, [updatedUserDetails]]) => {
                 if (!updatedUserDetails) {
                     return res.status(404).send({ success: false, message: ErrorMessage.USER_NOT_FOUND });
@@ -42,16 +45,17 @@ module.exports = {
     login: async (req, res, next) => {
         try {
             const { username, password } = req.body;
-            const user = await UserTable.findOne({ where: { username } });
-            if (!user) {
-                return res.status(404).send({ success: false, message: ErrorMessage.USER_NOT_FOUND });
-            }
-            const isValidCredentials = validPassword(password, user.salt, user.hash);
-            if (!isValidCredentials) {
-                return res.status(401).send({ success: false, message: ErrorMessage.INVALID_PASSWORD });
-            }
-            const token = getToken(username, user.id);
-            return res.status(200).send({ token, username });
+            UserTable.findOne({ where: { username } }).then((user) => {
+                if (!user) {
+                    return res.status(404).send({ success: false, message: ErrorMessage.USER_NOT_FOUND });
+                }
+                const isValidCredentials = validPassword(password, user.salt, user.hash);
+                if (!isValidCredentials) {
+                    return res.status(401).send({ success: false, message: ErrorMessage.INVALID_PASSWORD });
+                }
+                const token = getToken(username, user.id);
+                return res.status(200).send({ token, username });
+            }).catch(next);
         } catch (e) {
             return next(e);
         }

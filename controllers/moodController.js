@@ -1,8 +1,10 @@
 const { Op } = require("sequelize");
-const { UserTable, MoodEntryTable, convertDateToSequelizeDateOnly } = require("../db");
+const shortid = require("shortid");
+const { MoodEntryTable, SharedLinkTable, convertDateToSequelizeDateOnly, UserTable } = require("../db");
 const { EmojiEnums } = require("../models/moodEntry");
 const ErrorMessage = require("../utils/errorMessages");
 const frequentlyUsedEmoji = require("../utils/dataProcessor");
+
 
 module.exports = {
     logMood: (req, res, next) => {
@@ -27,6 +29,7 @@ module.exports = {
     },
     updateMood: (req, res, next) => {
         try {
+            const userId = req.auth_user.userId;
             const { emoji, note, date } = req.body;
             if (!date) {
                 return res.status(400).send({ success: false, message: ErrorMessage.DATE_MISSING });
@@ -47,6 +50,9 @@ module.exports = {
                 { emoji: updateMood.emoji, note: updateMood.note },
                 { returning: true, where: { userId, date: sequelizedDateOnly.val } }
             ).then(([_, [mood]]) => {
+                if (!mood) {
+                    return res.status(404).send({ success: false, message: ErrorMessage.MOOD_NOT_FOUND });
+                }
                 return res.status(200).send({ success: true, mood });
             }).catch(next);
 
@@ -166,6 +172,66 @@ module.exports = {
                 const processedMoods = frequentlyUsedEmoji(moodEntries);
                 return res.status(200).send({ success: true, processedMoods });
             })
+        } catch (e) {
+            return next(e);
+        }
+    },
+    shareLink: (req, res, next) => {
+        try {
+            const userId = req.auth_user.userId;
+            const { startDate, endDate } = req.body;
+            const linkId = shortid.generate();
+            SharedLinkTable.create({ linkId, userId, startDate, endDate }).then(() => {
+                return res.status(200).send({ success: true, linkId });
+            }).catch((err) => {
+                if (err.name == 'SequelizeUniqueConstraintError') {
+                    return res.status(500).send({ success: false, err });
+                }
+                return next(err);
+            });
+        } catch (e) {
+            return next(e);
+        }
+    },
+    getSharedMoodData: (req, res, next) => {
+        try {
+            const linkId = req.params.linkId;
+            SharedLinkTable.findOne({ where: { linkId } }).then((sharedLink) => {
+                if (!sharedLink) {
+                    return res.status(404).send({ success: false, message: ErrorMessage.LINK_NOT_FOUND });
+                }
+                UserTable.findByPk(sharedLink.userId).then((user) => {
+                    if (!user.sharinglink) {
+                        return res.status(403).send({ success: false, message: ErrorMessage.USER_FORBIDDEN });
+                    }
+                    const { startDate, endDate } = sharedLink;
+                    if (startDate) {
+                        startDate = convertDateToSequelizeDateOnly(startDate).val;
+                    }
+                    if (endDate) {
+                        endDate = convertDateToSequelizeDateOnly(endDate).val;
+                    }
+
+                    const whereCondition = {
+                        userId: sharedLink.userId,
+                        date: {},
+                    };
+
+                    if (startDate && endDate) {
+                        whereCondition.date[Op.between] = [startDate, endDate];
+                    } else if (startDate) {
+                        whereCondition.date[Op.gte] = startDate;
+                    } else if (endDate) {
+                        whereCondition.date[Op.lte] = endDate;
+                    }
+
+                    MoodEntryTable.findAll({
+                        where: whereCondition,
+                    }).then((moodEntries) => {
+                        return res.status(200).send({ success: true, moodEntries });
+                    }).catch(next);
+                }).catch(next);
+            }).catch(next);
         } catch (e) {
             return next(e);
         }

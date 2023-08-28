@@ -15,7 +15,7 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 app.use(cors());
 
-db.sync({ force: true })
+db.sync()
     .then(() => {
         console.log("Database and tables synced");
         startServer();

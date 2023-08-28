@@ -12,5 +12,7 @@ router.post("/monthlySummary", authenticateUser, moodController.monthlySummary);
 router.post("/emojiStatistics", moodController.emojiStatistics);
 router.post("/retriveMoods", authenticateUser, moodController.retriveMoods);
 router.get("/publicMoods", moodController.publicMoods);
+router.post("/shareLink", authenticateUser, moodController.shareLink);
+router.get("/shared/:linkId", moodController.getSharedMoodData);
 
 module.exports = router;
