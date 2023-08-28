@@ -30,3 +30,18 @@ We created to tables for that.
 1. User Table - id(PK), username(unique), salt, hash, sharingOption
 3. MoodEntryTable - id, date(PK), userId(PK, FK), emoji, note. Here the *date* and *userId* is a composite key to identify a particular mood log. *userId* is the ForeignKey from User Table (id).
 
+# Design Discussion of important features
+## Sharing and Collaboration
+A user will be able to share his/her past mood logs with others.
+Implementation - 
+1. An endpoint is designed where the user can log in and generate a link to share the logs history. Optional startdate and enddate can be added to share data in that range.
+2. A separate endpoint is designed where we can get the required data from the url query param. It will check internally if the *sharingOption* is enabled or not for the user whose data we want to look at. If enabled we will share the datas.
+
+## Emoji Suggestion
+A user can get a suggestion of emoji based on the note he/she added.
+Implementation - 
+1. We can use *node-nlp* library to pre train(in supervise method) the model on some datas, and after that it will be used to suggest emoji based on the note.
+2. It can be further trained on performing cron job per day on all the entries we got in the Mood Entry table.
+4. An endpoint will be designed where the user can provide the notes to get the suggestion.
+
+# Thank you.
